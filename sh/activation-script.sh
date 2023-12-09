@@ -24,3 +24,4 @@ else
     rm "$TARGET_DIR/info.plist"
     cp -fL $WORKDIR/workflow/info.plist "$TARGET_DIR"
 fi
+chmod 644 "$TARGET_DIR/info.plist"
