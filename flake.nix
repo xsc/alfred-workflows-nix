@@ -28,11 +28,13 @@
 
         # Module to activate the workflows after installation
         modules.activateWorkflows = { config, ... }:
-          let pkgs = config.environment.systemPackages;
-          in {
+          let
+            pkgs = config.environment.systemPackages;
+            alfredWorkflows = builtins.filter (pkg: pkg ? isAlfredWorkflow) pkgs;
+          in
+          {
             system.activationScripts.postUserActivation.text =
-              let alfredWorkflows = builtins.filter (pkg: pkg ? isAlfredWorkflow) pkgs;
-              in builtins.concatStringsSep ";" (map (pkg: "${pkg}/${pkg.activationScript}") alfredWorkflows);
+              builtins.concatStringsSep ";" (map (pkg: "${pkg}/${pkg.activationScript}") alfredWorkflows);
           };
       };
 
@@ -73,7 +75,9 @@
           mkWorkflowPackage = { name, path, ... }:
             let
               outPath = "share/alfred-workflows/${name}";
-              target = "${outPath}/${name}.alfredworkflow";
+              workflowFile = "${outPath}/${name}.alfredworkflow";
+              workflowDirectory = "${outPath}/workflow";
+              activationScript = "${outPath}/activate";
             in
             lib.nameValuePair name (
               pkgs.stdenvNoCC.mkDerivation {
@@ -113,26 +117,24 @@
 
                 installPhase = ''
                   runHook preInstall
-                  mkdir -p $out/${outPath}/workflow
+                  mkdir -p $out/${workflowDirectory}
 
                   # Unpack
-                  unzip ${path} -d $out/${outPath}/workflow
+                  unzip ${path} -d $out/${workflowDirectory}
 
                   # Installation Script
-                  printenv ACTIVATE_SCRIPT > $out/${outPath}/activate
-                  chmod +x $out/${outPath}/activate
+                  printenv ACTIVATE_SCRIPT > $out/${activationScript}
+                  chmod +x $out/${activationScript}
 
                   # File
-                  cp --reflink=auto ${path} $out/${target}
+                  cp --reflink=auto ${path} $out/${workflowFile}
                   runHook postInstall
                 '';
 
                 isAlfredWorkflow = true;
 
                 passthru = {
-                  workflowFile = target;
-                  worklofDirectory = "${outPath}/workflow";
-                  activationScript = "${outPath}/activate";
+                  inherit activationScript workflowFile workflowDirectory;
                 };
               });
           workflowDerivations = map mkWorkflowPackage workflowFiles;
