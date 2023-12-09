@@ -13,12 +13,25 @@
   outputs = { self, nixpkgs, flake-parts, alfred-gallery }@inputs:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [ ];
-      flake = {
-        overlays.alfredGallery = final: prev: {
-          alfredGallery = self.packages.${prev.system};
+
+      flake =
+        rec {
+          # Overlay
+          overlays.alfred-gallery = final: prev: {
+            alfredGallery = self.packages.${prev.system};
+          };
+          overlays.default = self.overlays.alfred-gallery;
+
+          # Module to activate the workflows after installation
+          modules.activateWorkflows = { config, ... }:
+            let pkgs = config.environment.systemPackages;
+            in {
+              system.activationScripts.postUserActivation.text =
+                let alfredWorkflows = builtins.filter (pkg: pkg ? isAlfredWorkflow) pkgs;
+                in builtins.concatStringsSep ";" (map (pkg: "${pkg}/${pkg.activationScript}") alfredWorkflows);
+            };
         };
-        overlays.default = self.overlays.alfredGallery;
-      };
+
       systems = [ "aarch64-darwin" "x86_64-darwin" ];
       perSystem = { lib, pkgs, ... }:
         let
@@ -55,7 +68,8 @@
           # Create Packages
           mkWorkflowPackage = { name, path, ... }:
             let
-              target = "share/alfred-workflows/${name}.alfredworkflow";
+              outPath = "share/alfred-workflows/${name}";
+              target = "${outPath}/${name}.alfredworkflow";
             in
             lib.nameValuePair name (
               pkgs.stdenvNoCC.mkDerivation {
@@ -63,15 +77,58 @@
                 dontUnpack = true;
                 dontConfigure = true;
                 dontBuild = true;
+
+                buildInputs = with pkgs; [
+                  unzip
+                ];
+
+                ACTIVATE_SCRIPT = ''
+                  #!/bin/sh
+                  WORKDIR=$(readlink -f $(dirname "$0"))
+                  TARGET_DIR="$HOME/Library/Application Support/Alfred/Alfred.alfredpreferences/workflows/${name}"
+
+                  mkdir -p "$TARGET_DIR"
+
+                  # Backup settings
+                  if [ -f "$TARGET_DIR/info.plist" ]; then
+                    mv -f "$TARGET_DIR/info.plist" "$TARGET_DIR/info.plist.backup"
+                  fi
+
+                  # Symlink workflow
+                  ln -sf $WORKDIR/workflow/* "$TARGET_DIR"
+
+                  # Restore backed up settings
+                  # OR Replace the symlinked settings with a mutable file
+                  if [ -f "$TARGET_DIR/info.plist.backup" ]; then
+                    mv -f "$TARGET_DIR/info.plist.backup" "$TARGET_DIR/info.plist"
+                  else
+                    rm "$TARGET_DIR/info.plist"
+                    cp -fL $WORKDIR/workflow/info.plist "$TARGET_DIR"
+                  fi
+                '';
+
                 installPhase = ''
                   runHook preInstall
-                  mkdir -p $out/share/alfred-workflows
+                  mkdir -p $out/${outPath}/workflow
+
+                  # Unpack
+                  unzip ${path} -d $out/${outPath}/workflow
+
+                  # Installation Script
+                  printenv ACTIVATE_SCRIPT > $out/${outPath}/activate
+                  chmod +x $out/${outPath}/activate
+
+                  # File
                   cp --reflink=auto ${path} $out/${target}
                   runHook postInstall
                 '';
 
+                isAlfredWorkflow = true;
+
                 passthru = {
                   workflowFile = target;
+                  worklofDirectory = "${outPath}/workflow";
+                  activationScript = "${outPath}/activate";
                 };
               });
           workflowDerivations = map mkWorkflowPackage workflowFiles;
