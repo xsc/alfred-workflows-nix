@@ -83,9 +83,6 @@ nix run github:xsc/alfred-workflows-nix
 nix run github:xsc/alfred-workflows-nix -- --json
 ```
 
-There is a potentially outdated snapshost of the above command at
-[`workflows.json`](./workflows.json).
-
 ### Modules
 
 There are two modules contained in the flake (at `<flake>.darwinModules`):
