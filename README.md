@@ -58,7 +58,7 @@ same as the Alfred workflow ID. Examples include:
 
 #### Activation
 
-Every packages comes with an activation script. The passthru option
+Every package comes with an activation script. The passthru option
 `activationScript` points at the script, relative to the package directory,
 which you can use however you see fit, e.g.:
 
