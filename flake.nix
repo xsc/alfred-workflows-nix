@@ -16,26 +16,30 @@
 
       flake = {
         # Overlay
-        overlays.alfred-gallery = final: prev: {
-          alfredGallery = self.packages.${prev.system};
-        };
-        overlays.default = self.overlays.alfred-gallery;
-
-        # Module to include overlay
-        modules.includeOverlay = { config, pkgs, ... }: {
-          nixpkgs.overlays = [ self.overlays.default ];
-        };
-
-        # Module to activate the workflows after installation
-        modules.activateWorkflows = { config, ... }:
-          let
-            pkgs = config.environment.systemPackages;
-            alfredWorkflows = builtins.filter (pkg: pkg ? isAlfredWorkflow) pkgs;
-          in
-          {
-            system.activationScripts.postUserActivation.text =
-              builtins.concatStringsSep ";" (map (pkg: "${pkg}/${pkg.activationScript}") alfredWorkflows);
+        overlays = {
+          alfred-gallery = final: prev: {
+            alfredGallery = self.packages.${prev.system};
           };
+          default = self.overlays.alfred-gallery;
+        };
+
+        darwinModules = {
+          # Module to include overlay
+          includeOverlay = { config, pkgs, ... }: {
+            nixpkgs.overlays = [ self.overlays.default ];
+          };
+
+          # Module to activate the workflows after installation
+          activateWorkflows = { config, ... }:
+            let
+              pkgs = config.environment.systemPackages;
+              alfredWorkflows = builtins.filter (pkg: pkg ? isAlfredWorkflow) pkgs;
+            in
+            {
+              system.activationScripts.postUserActivation.text =
+                builtins.concatStringsSep ";" (map (pkg: "${pkg}/${pkg.activationScript}") alfredWorkflows);
+            };
+        };
       };
 
       systems = [ "aarch64-darwin" "x86_64-darwin" ];

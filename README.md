@@ -38,7 +38,7 @@ Here's an example that installs two Alfred workflows (but not Alfred itself):
             unzip
           ];
         })
-        alfred.modules.activateWorkflows
+        alfred.darwinModules.activateWorkflows
       ];
     };
   };
@@ -88,7 +88,7 @@ There is a potentially outdated snapshost of the above command at
 
 ### Modules
 
-There are two modules contained in the flake (at `<flake>.modules`):
+There are two modules contained in the flake (at `<flake>.darwinModules`):
 
 - `includeOverlay` will add the overlay to `nixpkgs.overlays`.
 - `activateWorkflows` will add a `postUserActivation` script to copy workflows to
