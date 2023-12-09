@@ -76,11 +76,11 @@ is writeable (since you couldn't configure your workflows otherwise).
 
 #### List available packages
 
-You can generate a JSON index of the available packages using:
+You can generate a list of the available packages using one of:
 
 ```sh
-nix flake show --all-systems  --json | \
-  jq '[.packages as $pkgs | $pkgs | keys[] as $k | { "system": $k, "packages": ($pkgs[$k] | map(.name)) }]'
+nix run github:xsc/alfred-workflows-nix
+nix run github:xsc/alfred-workflows-nix -- --json
 ```
 
 There is a potentially outdated snapshost of the above command at

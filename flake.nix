@@ -14,6 +14,7 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
         ./nix/darwin-modules.nix
+        #     ./nix/available-workflows.nix
       ];
 
 
@@ -29,12 +30,15 @@
       systems = [ "aarch64-darwin" "x86_64-darwin" ];
       perSystem = { lib, pkgs, ... }:
         let
-          workflowPackages = import ./nix/workflow-packages.nix {
-            inherit lib pkgs;
-          };
+          gen = pkgs.callPackage ./nix/generate-packages.nix { };
+          availableWorkflows = pkgs.callPackage ./nix/available-workflows.nix { };
+          workflowPackages = gen.generate "${alfred-gallery}";
         in
         {
-          packages = workflowPackages.generate "${alfred-gallery}";
+          packages = lib.listToAttrs (
+            map (pkg: lib.nameValuePair pkg.name pkg) workflowPackages
+          );
+          apps.default = availableWorkflows.mkApp workflowPackages;
         };
     };
 }

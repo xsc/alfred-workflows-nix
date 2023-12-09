@@ -13,6 +13,7 @@ let
     in
     map
       (file: {
+        publisher = "${directory}";
         name = lib.removeSuffix ".alfredworkflow" file;
         path = "${rootPath}/workflows/${directory}/${file}";
       })
@@ -36,52 +37,55 @@ let
     );
 
   # Create Derivation for collected workflow
-  mkWorkflowPackage = { name, path, ... }:
+  mkWorkflowPackage = { name, path, publisher, ... }:
     let
       outPath = "share/alfred-workflows/${name}";
       workflowFile = "${outPath}/${name}.alfredworkflow";
       workflowDirectory = "${outPath}/workflow";
       activationScript = "${outPath}/activate";
     in
-    lib.nameValuePair name (
-      pkgs.stdenvNoCC.mkDerivation {
-        inherit name;
-        dontUnpack = true;
-        dontConfigure = true;
-        dontBuild = true;
+    pkgs.stdenvNoCC.mkDerivation {
+      inherit name;
+      dontUnpack = true;
+      dontConfigure = true;
+      dontBuild = true;
 
-        buildInputs = with pkgs; [
-          unzip
-        ];
+      buildInputs = with pkgs; [
+        unzip
+      ];
 
-        ACTIVATE_SCRIPT = builtins.readFile ../sh/activation-script.sh;
+      ACTIVATE_SCRIPT = builtins.readFile ../sh/activation-script.sh;
 
-        installPhase = ''
-          runHook preInstall
-          mkdir -p $out/${workflowDirectory}
+      installPhase = ''
+        runHook preInstall
+        mkdir -p $out/${workflowDirectory}
 
-          # Unpack
-          unzip ${path} -d $out/${workflowDirectory}
+        # Unpack
+        unzip ${path} -d $out/${workflowDirectory}
 
-          # Installation Script
-          printenv ACTIVATE_SCRIPT > $out/${activationScript}
-          chmod +x $out/${activationScript}
+        # Installation Script
+        printenv ACTIVATE_SCRIPT > $out/${activationScript}
+        chmod +x $out/${activationScript}
 
-          # File
-          cp --reflink=auto ${path} $out/${workflowFile}
-          runHook postInstall
-        '';
+        # File
+        cp --reflink=auto ${path} $out/${workflowFile}
+        runHook postInstall
+      '';
 
-        isAlfredWorkflow = true;
+      isAlfredWorkflow = true;
 
-        passthru = {
-          inherit activationScript workflowFile workflowDirectory;
-        };
-      });
+      meta = {
+        inherit publisher;
+        downloadPage = "https://alfred.app/workflows/${publisher}/${name}";
+      };
+
+      passthru = {
+        inherit activationScript workflowFile workflowDirectory;
+      };
+    };
 in
 {
   generate = path:
-    lib.listToAttrs (
-      map mkWorkflowPackage (collectWorkflows path)
-    );
+    map mkWorkflowPackage (collectWorkflows path)
+  ;
 }
