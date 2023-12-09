@@ -20,9 +20,15 @@
 
       flake = {
         overlays = {
-          alfred-gallery = final: prev: {
-            alfredGallery = self.packages.${prev.system};
-          };
+          alfred-gallery = final: prev:
+            let utils = import ./nix/utils.nix prev;
+            in {
+              alfredGallery =
+                prev.lib.filterAttrs
+                  (n: v: n != "alfredUtils")
+                  self.packages.${prev.system};
+              alfredUtils = utils.package;
+            };
           default = self.overlays.alfred-gallery;
         };
       };
@@ -30,14 +36,18 @@
       systems = [ "aarch64-darwin" "x86_64-darwin" ];
       perSystem = { lib, pkgs, ... }:
         let
-          gen = pkgs.callPackage ./nix/generate-packages.nix { };
-          availableWorkflows = pkgs.callPackage ./nix/available-workflows.nix { };
-          workflowPackages = gen.generate "${alfred-gallery}";
+          utils =
+            pkgs.callPackage ./nix/utils.nix { };
+          availableWorkflows =
+            pkgs.callPackage ./nix/available-workflows.nix { };
+          workflowPackages =
+            map utils.mkWorkflow (utils.collectWorkflows "${alfred-gallery}");
         in
         {
-          packages = lib.listToAttrs (
-            map (pkg: lib.nameValuePair pkg.name pkg) workflowPackages
-          );
+          packages =
+            lib.listToAttrs
+              (map (pkg: lib.nameValuePair pkg.name pkg) workflowPackages);
+
           apps.default = availableWorkflows.mkApp workflowPackages;
         };
     };

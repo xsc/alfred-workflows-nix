@@ -10,7 +10,7 @@ let
             (pkg: {
               inherit (pkg) name;
               inherit (pkg.meta) downloadPage;
-              fullName = "${pkg.meta.publisher}/${pkg.name}";
+              fullName = "${pkg.meta.owner}/${pkg.name}";
             })
             packages);
       jsonFile = pkgs.writeText "app-config.json" json;
