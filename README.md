@@ -1,4 +1,4 @@
-# alfred-gallery-nix
+# alfred-workflows-nix
 
 Packages [alfredapp/gallery-workflows][repo] as flake outputs for easy access
 in your Nix packages configuration.
@@ -23,22 +23,22 @@ Here's an example that installs two Alfred workflows (but not Alfred itself):
       url = "github:LnL7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    alfred-gallery.url = "github:xsc/alfred-gallery-nix";
+    alfred.url = "github:xsc/alfred-workflows-nix";
   };
 
-  outputs = { self, nixpkgs, darwin, alfred-gallery, ... }: {
+  outputs = { self, nixpkgs, darwin, alfred, ... }: {
     darwinConfigurations.macos = darwin.lib.darwinSystem {
       system = "aarch64-darwin";
       modules = [
         ({ config, pkgs, ... }: {
-          nixpkgs.overlays = [ alfred-gallery.overlays.default ];
+          nixpkgs.overlays = [ alfred.overlays.default ];
           environment.systemPackages = with pkgs; [
             alfredGallery.spotify-mini-player
             alfredGallery.emoji-search
             unzip
           ];
         })
-        alfred-gallery.modules.activateWorkflows
+        alfred.modules.activateWorkflows
       ];
     };
   };
