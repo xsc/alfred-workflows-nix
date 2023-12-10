@@ -25,7 +25,7 @@ else
 fi
 if [ -f "$TARGET_DIR.backup/prefs.plist" ]; then
     mv -f "$TARGET_DIR.backup/prefs.plist" "$TARGET_DIR/prefs.plist"
-else
+fi
 
 # Make directories and settings files
 chmod -f 644 "$TARGET_DIR/info.plist"
