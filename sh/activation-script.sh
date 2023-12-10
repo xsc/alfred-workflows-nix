@@ -28,9 +28,10 @@ if [ -f "$TARGET_DIR.backup/prefs.plist" ]; then
 fi
 
 # Make directories and settings files
-chmod -f 644 "$TARGET_DIR/info.plist"
-chmod -f 644 "$TARGET_DIR/prefs.plist"
+[ ! -f "$TARGET_DIR/info.plist" ] || chmod 644 "$TARGET_DIR/info.plist"
+[ ! -f "$TARGET_DIR/prefs.plist" ] || chmod 644 "$TARGET_DIR/prefs.plist"
 find "$TARGET_DIR" -type d -exec chmod -f 755 {} \;
 
 # Remove backup
 rm -rf "$TARGET_DIR.backup"
+echo "Activated Alfred workflow: $WORKFLOW_NAME"
