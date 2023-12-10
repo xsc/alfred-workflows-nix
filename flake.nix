@@ -36,14 +36,10 @@
             pkgs.callPackage ./nix/utils.nix { };
           availableWorkflows =
             pkgs.callPackage ./nix/available-workflows.nix { };
-          workflowPackages =
-            map utils.mkWorkflow (utils.collectWorkflows "${alfred-gallery}");
+          workflowPackages = utils.collectAndPackage alfred-gallery;
         in
         {
-          packages =
-            lib.listToAttrs
-              (map (pkg: lib.nameValuePair pkg.name pkg) workflowPackages);
-
+          packages = utils.toAttrset workflowPackages;
           apps.default = availableWorkflows.mkApp workflowPackages;
         };
     };

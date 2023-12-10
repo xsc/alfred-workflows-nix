@@ -92,6 +92,22 @@ There are two modules contained in the flake (at `<flake>.darwinModules`):
   Alfred's workflow directory. It will automatically use any Alfred workflows
   in `environment.systemPackages`.
 
+### Utilities
+
+There are a few utility functions defined in the `alfredUtils` package:
+
+**`mkAlfredWorkflow { name, owner, src, version? }`**
+
+Creates an Alfred workflow package from the `.alfredworkflow` file at `src`
+(which can either be anything that coerces to a string pointing at the file, e.g.
+a `fetch*` derivation or a local file).
+
+**`fetchGithubRelease { owner, repo, hash, version, artifactName? }`**
+
+Many Alfred workflows are exposed as Github releases, and this utility function
+allows fetching a release artifact from `${owner}/${repo}` using the tag/version
+`version` and the given `artifactName`. If no `artifactName` is given,
+`${repo}.alfredworkflow` is assumed.
 
 ## License
 

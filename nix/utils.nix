@@ -15,7 +15,7 @@ rec {
       (file: {
         owner = "${directory}";
         name = lib.removeSuffix ".alfredworkflow" file;
-        path = "${rootPath}/workflows/${directory}/${file}";
+        src = "${rootPath}/workflows/${directory}/${file}";
       })
       workflowFiles;
 
@@ -37,7 +37,7 @@ rec {
     );
 
   # Create Derivation for collected workflow
-  mkWorkflow = { name, path, owner, version ? null }:
+  mkAlfredWorkflow = { name, src, owner, version ? null }:
     let
       outPath = "share/alfred-workflows/${name}";
       workflowFile = "${outPath}/${name}.alfredworkflow";
@@ -61,14 +61,14 @@ rec {
         mkdir -p $out/${workflowDirectory}
 
         # Unpack
-        unzip ${path} -d $out/${workflowDirectory}
+        unzip ${src} -d $out/${workflowDirectory}
 
         # Installation Script
         printenv ACTIVATE_SCRIPT > $out/${activationScript}
         chmod +x $out/${activationScript}
 
         # File
-        cp --reflink=auto ${path} $out/${workflowFile}
+        cp --reflink=auto ${src} $out/${workflowFile}
         runHook postInstall
       '';
 
@@ -98,12 +98,15 @@ rec {
         "https://github.com/${owner}/${repo}/releases/download/${version}/${filename}";
     };
 
-  mkWorkflowFromSrc = { name, version, src, owner }:
-    mkWorkflow {
-      inherit name owner version;
-      path = "${src}";
-    };
+  # Collect and package
+  collectAndPackage = rootPath:
+    map mkAlfredWorkflow (collectWorkflows "${rootPath}");
 
+  toAttrset = workflowPackages:
+    lib.listToAttrs
+      (map (pkg: lib.nameValuePair pkg.name pkg) workflowPackages);
+
+  # alfredUtils package
   package = pkgs.stdenvNoCC.mkDerivation {
     name = "alfredUtils";
     dontUnpack = true;
@@ -114,8 +117,7 @@ rec {
     passthru = {
       inherit
         fetchGithubRelease
-        mkWorkflow
-        mkWorkflowFromSrc;
+        mkAlfredWorkflow;
     };
   };
 }
