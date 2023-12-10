@@ -23,9 +23,13 @@ else
     rm "$TARGET_DIR/info.plist"
     cp -fL $WORKDIR/workflow/info.plist "$TARGET_DIR"
 fi
+if [ -f "$TARGET_DIR.backup/prefs.plist" ]; then
+    mv -f "$TARGET_DIR.backup/prefs.plist" "$TARGET_DIR/prefs.plist"
+else
 
-# Make directories and info.plist writeable
+# Make directories and settings files
 chmod -f 644 "$TARGET_DIR/info.plist"
+chmod -f 644 "$TARGET_DIR/prefs.plist"
 find "$TARGET_DIR" -type d -exec chmod -f 755 {} \;
 
 # Remove backup
