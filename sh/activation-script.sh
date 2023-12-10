@@ -24,8 +24,9 @@ else
     cp -fL $WORKDIR/workflow/info.plist "$TARGET_DIR"
 fi
 
-# Make directory writeable
-chmod -Rf 644 "$TARGET_DIR"
+# Make directories and info.plist writeable
+chmod -f 644 "$TARGET_DIR/info.plist"
+find "$TARGET_DIR" -type d -exec chmod -f 755 {} \;
 
 # Remove backup
 rm -rf "$TARGET_DIR.backup"
