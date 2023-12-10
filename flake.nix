@@ -14,7 +14,6 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
         ./nix/darwin-modules.nix
-        #     ./nix/available-workflows.nix
       ];
 
 
@@ -23,10 +22,7 @@
           alfred-gallery = final: prev:
             let utils = import ./nix/utils.nix prev;
             in {
-              alfredGallery =
-                prev.lib.filterAttrs
-                  (n: v: n != "alfredUtils")
-                  self.packages.${prev.system};
+              alfredGallery = self.packages.${prev.system};
               alfredUtils = utils.package;
             };
           default = self.overlays.alfred-gallery;
