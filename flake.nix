@@ -13,14 +13,14 @@
   outputs = { self, nixpkgs, flake-parts, alfred-gallery }@inputs:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
-        ./nix/darwin-modules.nix
+        ./darwin-modules.nix
       ];
 
 
       flake = {
         overlays = {
           alfred-gallery = final: prev:
-            let utils = import ./nix/utils.nix prev;
+            let utils = import ./alfred-utils prev;
             in {
               alfredGallery = self.packages.${prev.system};
               alfredUtils = utils.package;
@@ -33,10 +33,11 @@
       perSystem = { lib, pkgs, ... }:
         let
           utils =
-            pkgs.callPackage ./nix/utils.nix { };
+            pkgs.callPackage ./alfred-utils { };
           availableWorkflows =
-            pkgs.callPackage ./nix/available-workflows.nix { };
-          workflowPackages = utils.collectAndPackage alfred-gallery;
+            pkgs.callPackage ./apps/available-workflows.nix { };
+          workflowPackages =
+            (pkgs.callPackage ./alfred-gallery { inherit alfred-gallery utils; });
         in
         {
           packages = utils.toAttrset workflowPackages;

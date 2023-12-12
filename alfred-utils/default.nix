@@ -1,41 +1,6 @@
 { lib, pkgs, ... }:
 
-rec {
-  # Helpers
-  readDir = path: lib.attrNames (builtins.readDir path);
-  isWorkflow = file: lib.hasSuffix ".alfredworkflow" file;
-
-  # Workflow collection from a publisher's directory
-  collectWorkflowsFromDirectory = rootPath: directory:
-    let
-      files = readDir "${rootPath}/workflows/${directory}";
-      workflowFiles = lib.filter isWorkflow files;
-    in
-    map
-      (file: {
-        owner = "${directory}";
-        name = lib.removeSuffix ".alfredworkflow" file;
-        src = "${rootPath}/workflows/${directory}/${file}";
-      })
-      workflowFiles;
-
-  # Workflow collection from the 'alfred-gallery' root path
-  collectWorkflows = rootPath:
-    let
-      workflowDirectories = readDir "${rootPath}/workflows";
-      results = lib.concatLists (
-        map (collectWorkflowsFromDirectory rootPath) workflowDirectories
-      );
-      allWorkflowNamesAreUnique = lib.allUnique (map (file: file.name) results);
-    in
-    (
-      # Ensure that all workflow names are unique. When that stops being
-      # the case, we have to somehow include the workflow's owner
-      # name in the package name.
-      assert allWorkflowNamesAreUnique;
-      results
-    );
-
+let
   # Create Derivation for collected workflow
   mkAlfredWorkflow = { name, src, owner, version ? null }:
     let
@@ -54,7 +19,7 @@ rec {
         unzip
       ];
 
-      ACTIVATE_SCRIPT = builtins.readFile ../sh/activation-script.sh;
+      ACTIVATE_SCRIPT = builtins.readFile ./activation-script.sh;
 
       installPhase = ''
         runHook preInstall
@@ -99,12 +64,13 @@ rec {
     };
 
   # Collect and package
-  collectAndPackage = rootPath:
-    map mkAlfredWorkflow (collectWorkflows "${rootPath}");
-
   toAttrset = workflowPackages:
     lib.listToAttrs
       (map (pkg: lib.nameValuePair pkg.name pkg) workflowPackages);
+
+in
+{
+  inherit mkAlfredWorkflow fetchGithubRelease toAttrset;
 
   # alfredUtils package
   package = pkgs.stdenvNoCC.mkDerivation {

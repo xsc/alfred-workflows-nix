@@ -13,7 +13,7 @@ let
               fullName = "${pkg.meta.owner}/${pkg.name}";
             })
             packages);
-      jsonFile = pkgs.writeText "app-config.json" json;
+      jsonFile = pkgs.writeText "available-workflows.json" json;
     in
     pkgs.writeScriptBin "available-packages" ''
       jq=${pkgs.jq}/bin/jq
